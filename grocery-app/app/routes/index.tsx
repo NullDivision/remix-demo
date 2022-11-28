@@ -48,26 +48,37 @@ const handleAdd = async (formData: FormData): Promise<TypedResponse<ActionRespon
   }
 }
 
-const handleDelete = async (formData: FormData): Promise<TypedResponse<never>> => {
-  const rowId = formData.get('row-id');
+const DeleteKey = 'delete';
+const OpenedKey = 'opened';
 
-  if (typeof rowId !== 'string' || rowId.length === 0) {
-    return null as never;
+const handleProductListForm = async (formData: FormData): Promise<TypedResponse<never>> => {
+  const deleteRowId = formData.get(DeleteKey);
+  const openedRowId = formData.get(OpenedKey);
+
+  if (typeof deleteRowId === 'string') {
+    await db.product.delete({ where: { id: parseInt(deleteRowId, 10) } });
+    return redirect('/');
   }
 
-  await db.product.delete({ where: { id: Number(rowId) } });
+  if (typeof openedRowId === 'string') {
+    await db.product.update({ where: { id: parseInt(openedRowId, 10) }, data: { opened: true } });
+    return redirect('/');
+  }
 
-  return redirect('/');
+  return null as never;
 };
 
-export const action: ActionFunction = async ({ request }): Promise<TypedResponse<ActionResponse | never>> => {
+const AddFormName = 'addForm';
+const ProductListFormName = 'productListForm';
+
+export const action: ActionFunction = async ({ request }): Promise<TypedResponse<ActionResponse>> => {
   const formData = await request.formData();
 
   switch (formData.get('formName')) {
-    case 'add':
+    case AddFormName:
       return handleAdd(formData);
-    case 'delete':
-      return handleDelete(formData);
+    case ProductListFormName:
+      return handleProductListForm(formData);
     default:
       throw new Error('Invalid form name');
   }
@@ -77,6 +88,8 @@ export const loader: LoaderFunction = async () => {
   return json(await db.product.findMany());
 };
 
+// TODO: add a link to a shopping card
+// TODO: be able to set individual items of a product separately (expiration, opened on...)
 export default function Index() {
   const [searchParams] = useSearchParams();
   const products = useLoaderData<Array<Product>>();
@@ -92,19 +105,27 @@ export default function Index() {
       <header>
         <Link to={{ search: 'request_add=true' }}>Add Item</Link>
       </header>
+
       <main>
-        <Form method='delete' reloadDocument>
-          <input type='hidden' name='formName' value='delete' />
+        <Form method='post' reloadDocument>
+          <input type='hidden' name='formName' value={ProductListFormName} />
 
           <ul id='product-list'>
-            {products.map(({ expiryDate, id, name }) => (
+            {products.map(({ expiryDate, id, name, opened }) => (
               <li key={id}>
                 <h2 className='product-name'>{name}</h2>[
                 {new Date(expiryDate).toLocaleDateString()}]
                 {getDaysRemaining(new Date(expiryDate)) <= 7 && '🕑'}
-                <button name='row-id' value={id.toString()} type='submit'>
-                  Delete
-                </button>
+                <div>
+                  {!opened && (
+                    <button name={OpenedKey} type='submit' value={id}>
+                      Open
+                    </button>
+                  )}
+                  <button name={DeleteKey} type='submit' value={id.toString()}>
+                    Delete
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -119,6 +140,7 @@ export default function Index() {
             <p>
               <label htmlFor='name'>Name</label>
               <input
+                autoComplete='off'
                 defaultValue={actionData?.values?.name}
                 id='name'
                 list='product-names'
@@ -148,7 +170,7 @@ export default function Index() {
             {actionData?.errors?._ && <p>{actionData.errors._}</p>}
 
             <Link to={{ search: '' }}>Cancel</Link>
-            <button name='formName' type='submit' value='add'>
+            <button name='formName' type='submit' value={AddFormName}>
               Add
             </button>
           </Form>
