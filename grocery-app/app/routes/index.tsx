@@ -2,9 +2,12 @@ import type { Product } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import type { ActionFunction, LinksFunction, LoaderFunction, TypedResponse} from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
-import { Form, Link, useActionData, useLoaderData, useSearchParams } from '@remix-run/react';
+import { Form, Link, useActionData, useFetcher, useLoaderData, useSearchParams } from '@remix-run/react';
+import debounce from 'lodash.debounce';
+import { useMemo } from 'react';
 import { db } from '~/db.server';
 import styles from '~/styles/main.css';
+import { differenceInCalendarDays } from 'date-fns/fp';
 
 export const links: LinksFunction = () => [{ href: styles, rel: 'stylesheet' }];
 
@@ -78,6 +81,11 @@ export default function Index() {
   const [searchParams] = useSearchParams();
   const products = useLoaderData<Array<Product>>();
   const actionData = useActionData<ActionResponse | never>();
+  const getDaysRemaining = differenceInCalendarDays(new Date());
+  const fetcher = useFetcher<Array<Product>>();
+  const handleChange = useMemo(() => debounce(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    fetcher.load(`/api/products?search=${event.target.value}`);
+  }, 500), [fetcher]);
 
   return (
     <>
@@ -85,14 +93,16 @@ export default function Index() {
         <Link to={{ search: 'request_add=true' }}>Add Item</Link>
       </header>
       <main>
-        <Form method="delete" reloadDocument>
-          <input type="hidden" name="formName" value="delete" />
+        <Form method='delete' reloadDocument>
+          <input type='hidden' name='formName' value='delete' />
 
-          <ul id="product-list">
+          <ul id='product-list'>
             {products.map(({ expiryDate, id, name }) => (
               <li key={id}>
-                <h2>{name}</h2> [{new Date(expiryDate).toLocaleDateString()}]
-                <button name="row-id" value={id.toString()} type="submit">
+                <h2 className='product-name'>{name}</h2>[
+                {new Date(expiryDate).toLocaleDateString()}]
+                {getDaysRemaining(new Date(expiryDate)) <= 7 && '🕑'}
+                <button name='row-id' value={id.toString()} type='submit'>
                   Delete
                 </button>
               </li>
@@ -102,32 +112,45 @@ export default function Index() {
       </main>
 
       {searchParams.get('request_add') && (
-        <div className="modal">
-          <Form method="post" reloadDocument>
+        <div className='modal'>
+          <Form method='post' reloadDocument>
             <h1>Add a product</h1>
 
             <p>
-              <label htmlFor="name">Name</label>
+              <label htmlFor='name'>Name</label>
               <input
                 defaultValue={actionData?.values?.name}
-                id="name"
-                name="name"
+                id='name'
+                list='product-names'
+                name='name'
+                onChange={handleChange}
                 required
-                type="text"
+                type='text'
               />
+              <datalist id='product-names'>
+                {fetcher.data?.map(({ id, name }) => (
+                  <option key={id} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </datalist>
             </p>
             {actionData?.errors?.name && <p>{actionData.errors.name}</p>}
 
             <p>
-              <label htmlFor="expiryDate">Expires on</label>
-              <input id="expiryDate" name="expiryDate" required type="date" />
+              <label htmlFor='expiryDate'>Expires on</label>
+              <input id='expiryDate' name='expiryDate' required type='date' />
             </p>
-            {actionData?.errors?.expiryDate && <p>{actionData.errors.expiryDate}</p>}
+            {actionData?.errors?.expiryDate && (
+              <p>{actionData.errors.expiryDate}</p>
+            )}
 
             {actionData?.errors?._ && <p>{actionData.errors._}</p>}
 
             <Link to={{ search: '' }}>Cancel</Link>
-            <button name="formName" type="submit" value="add">Add</button>
+            <button name='formName' type='submit' value='add'>
+              Add
+            </button>
           </Form>
         </div>
       )}
