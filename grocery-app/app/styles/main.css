@@ -1,3 +1,7 @@
+html, body {
+    min-height: 100vh;
+}
+
 .modal {
     display: inline-block;
     border: 1px solid #000;
@@ -7,5 +11,5 @@
 
 #product-list {
     margin: 0 auto;
-    width: 2%;
+    width: 12%;
 }
