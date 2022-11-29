@@ -69,7 +69,7 @@ export default function Index() {
                 <div>
                   {!shoppable && (
                     <button name={CartAddKey} type='submit' value={id}>
-                      Add to cart
+                      Add to list
                     </button>
                   )}
                   {!opened && (
