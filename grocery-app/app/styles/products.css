@@ -1,0 +1,20 @@
+#product-list {
+    list-style-type: none;
+    margin: 0 auto;
+    padding: 0;
+    width: 13%;
+}
+#product-list .product {
+    margin-bottom: 0.5em;
+}
+#product-list .product-name {
+    margin-top: 0;
+}
+
+#products-page {
+    display: flex;
+}
+
+#products-page form {
+    flex-grow: 1;
+}

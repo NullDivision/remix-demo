@@ -51,14 +51,15 @@ export const action: ActionFunction = async ({ request }): Promise<TypedResponse
   }
 
   try {
-    await db.product.create({ data: { expiryDate: new Date(expiryDate as string), name: `${name}` } });
+    await db.pantryProduct.create({
+      data: {
+        expiryDate: new Date(expiryDate as string),
+        product: { connectOrCreate: { create: { name: `${name}` }, where: { name: `${name}` } } }
+      }
+    });
 
-    return redirect('/');
+    return redirect('/pantry');
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return json({ errors: { name: 'Name already exists', values: Object.fromEntries(formData) } });
-    }
-
     console.error(error);
 
     return json({ errors: { _: 'An unknown error occured', values: Object.fromEntries(formData) } }, { status: 500 });
@@ -85,7 +86,8 @@ const Sidebar = () => {
       <h2>Grocery App</h2>
       <nav>
         <ul>
-          <li><Link to="/products">Home</Link></li>
+          <li><Link to="/pantry">Home</Link></li>
+          <li><Link to="/products">Products</Link></li>
           <li><Link to="/shopping-list">Shopping List</Link></li>
         </ul>
       </nav>
@@ -93,7 +95,7 @@ const Sidebar = () => {
       <p><Link to={{ search: 'request_add=true' }}>Add Item</Link></p>
 
       {searchParams.get('request_add') && (
-          <div className='modal'>
+          <div id="add-modal" className='modal'>
             <Form method='post' reloadDocument>
               <h1>Add a product</h1>
 
