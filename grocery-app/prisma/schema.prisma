@@ -8,10 +8,19 @@ datasource db {
 }
 
 model Product {
-  id Int @id @default(autoincrement())
-  name String
-  expiryDate DateTime @default(now())
-  opened Boolean @default(false)
+  id         Int        @id @default(autoincrement())
+  name       String
+  expiryDate DateTime   @default(now())
+  opened     Boolean    @default(false)
+  shoppable  Shoppable?
 
   @@unique([name])
+}
+
+model Shoppable {
+  id        Int       @id @default(autoincrement())
+  productId Int
+  product   Product   @relation(fields: [productId], references: [id])
+
+  @@unique([productId])
 }
