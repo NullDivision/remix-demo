@@ -3,7 +3,7 @@ import type { ActionFunction, LinksFunction, LoaderFunction, TypedResponse} from
 import { json, redirect } from '@remix-run/node';
 import { Form, Link, Outlet, useLoaderData } from '@remix-run/react';
 import { db } from '~/db.server';
-import styles from '~/styles/products.css';
+import styles from '~/styles/pantry.css';
 import { differenceInCalendarDays } from 'date-fns/fp';
 
 export const links: LinksFunction = () => [{ href: styles, rel: 'stylesheet' }];
@@ -53,7 +53,7 @@ export default function Index() {
   const getDaysRemaining = differenceInCalendarDays(new Date());
 
   return (
-    <div id='products-page'>
+    <div id='pantry-page'>
       <Form method='post' reloadDocument>
         <input type='hidden' name='formName' value={ProductListFormName} />
 

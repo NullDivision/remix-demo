@@ -11,10 +11,10 @@
     margin-top: 0;
 }
 
-#products-page {
+#pantry-page {
     display: flex;
 }
 
-#products-page form {
+#pantry-page form {
     flex-grow: 1;
 }

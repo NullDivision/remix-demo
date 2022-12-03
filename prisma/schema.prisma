@@ -8,10 +8,11 @@ datasource db {
 }
 
 model Product {
-  id         Int        @id @default(autoincrement())
-  name       String
-  shoppable  Shoppable?
-  pantry     PantryProduct[]
+  id            Int        @id @default(autoincrement())
+  name          String
+  shoppable     Shoppable?
+  pantry        PantryProduct[]
+  externalImage String?
 
   @@unique([name])
 }
